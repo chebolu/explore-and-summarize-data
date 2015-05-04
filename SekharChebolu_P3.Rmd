@@ -1,0 +1,949 @@
+Prosper Loan Data EDA by SEKHAR CHEBOLU
+========================================================
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+# Load all of the packages that you end up using
+# in your analysis in this code chunk.
+
+# Please set the working directory to the location of the data file.
+
+# Notice that the parameter "echo" was set to FALSE for this code chunk.
+# This prevents the code from displaying in the knitted HTML output.
+# You should set echo=FALSE for all code chunks in your file.
+
+library(ggplot2)
+library(GGally)
+library(scales)
+library(memisc)
+library(RColorBrewer)
+library(maps)
+library(ggmap)
+library(dplyr)
+library(tidyr)
+library(grid)
+library(gridExtra)
+library(lubridate)
+
+```
+
+
+The Prosper Loan Data consists of 113937 observations of 81 variables. These 
+observations are for the loans given between 2004 and 2014. 21 variables out of 
+these are taken for analysis in this project. These are as below
+
+```{r echo=FALSE, Load_the_Data}
+# Load the Data
+loan_data <- read.csv('prosperLoanData.csv')
+
+# Remove all the variables we will not be considering for analysis. Use the 
+# column names rather than the column numbers for easy readability later
+loan_data$ListingKey <- NULL
+loan_data$ListingNumber <- NULL
+loan_data$LenderYield <- NULL
+loan_data$ProsperRating..Alpha. <- NULL
+loan_data$EstimatedLoss <- NULL
+loan_data$EmploymentStatus <- NULL
+loan_data$CurrentlyInGroup <- NULL
+loan_data$GroupKey <- NULL
+loan_data$DateCreditPulled <- NULL
+loan_data$LoanKey <- NULL
+loan_data$LoanNumber <- NULL
+loan_data$MemberKey <- NULL
+loan_data$LP_CustomerPayments <- NULL
+loan_data$LP_CustomerPrincipalPayments <- NULL
+loan_data$LP_InterestandFees <- NULL
+loan_data$LP_ServiceFees <- NULL
+loan_data$LP_CollectionFees <- NULL
+loan_data$LP_GrossPrincipalLoss <- NULL
+loan_data$LP_NetPrincipalLoss <- NULL
+loan_data$LP_NonPrincipalRecoverypayments <- NULL
+loan_data$ProsperPaymentsOneMonthPlusLate <- NULL
+loan_data$TotalProsperPaymentsBilled <- NULL
+loan_data$ProsperPaymentsLessThanOneMonthLate <- NULL
+loan_data$ProsperPrincipalOutstanding <- NULL
+loan_data$ProsperPrincipalBorrowed <- NULL
+loan_data$OnTimeProsperPayments <- NULL
+loan_data$ScorexChangeAtTimeOfListing <- NULL
+loan_data$Occupation <- NULL
+loan_data$PublicRecordsLast12Months <- NULL
+loan_data$PublicRecordsLast10Years <- NULL
+loan_data$FirstRecordedCreditLine <- NULL
+loan_data$CurrentCreditLines <- NULL
+loan_data$OpenCreditLines <- NULL
+loan_data$TotalCreditLinespast7years <- NULL
+loan_data$OpenRevolvingAccounts <- NULL
+loan_data$OpenRevolvingMonthlyPayment <- NULL
+loan_data$InquiriesLast6Months <- NULL
+loan_data$OpenRevolvingMonthlyPayment <- NULL
+loan_data$InquiriesLast6Months <- NULL
+loan_data$TotalInquiries <- NULL
+loan_data$RevolvingCreditBalance <- NULL
+loan_data$AvailableBankcardCredit <- NULL
+loan_data$TotalTrades <- NULL
+loan_data$TradesNeverDelinquent..percentage. <- NULL
+loan_data$TradesOpenedLast6Months <- NULL
+loan_data$PercentFunded <- NULL
+loan_data$Recommendations <- NULL
+loan_data$InvestmentFromFriendsCount <- NULL
+loan_data$InvestmentFromFriendsAmount <- NULL
+loan_data$DelinquenciesLast7Years <- NULL
+loan_data$IncomeVerifiable <- NULL
+loan_data$ProsperScore <- NULL
+loan_data$AmountDelinquent <- NULL
+loan_data$LoanFirstDefaultedCycleNumber <- NULL
+loan_data$LoanCurrentDaysDelinquent <- NULL
+loan_data$TotalProsperLoans <- NULL
+loan_data$CurrentDelinquencies <- NULL
+loan_data$LoanMonthsSinceOrigination <- NULL
+loan_data$BorrowerAPR <- NULL
+loan_data$ClosedDate <- NULL
+loan_data$ListingCreationDate <- NULL
+loan_data$BankcardUtilization <- NULL
+loan_data$CreditGrade <- NULL
+
+
+names(loan_data)
+```
+#Description of Variables 
+
+The chosen variables are defined as
+
+1. **Term** - The length of the loan expressed in months.
+2. **LoanStatus** - The current status of the loan: Cancelled,  Chargedoff, 
+Completed, Current, Defaulted, FinalPaymentInProgress, PastDue. The PastDue 
+status will be accompanied by a delinquency bucket.
+3. **BorrowerRate** - The Borrower's interest rate for this loan. 
+4. **EstimatedEffectiveYield** - Effective yield is equal to the borrower 
+interest rate (i) minus the servicing fee rate, (ii) minus estimated uncollected
+interest on charge-offs, (iii) plus estimated collected late fees.  Applicable 
+for loans originated after July 2009.
+5. **EstimatedReturn** - 
+6. **ProsperRating..numeric.** - The  Prosper Rating assigned at the time the 
+listing was created: 0 - N/A, 1 - HR, 2 - E, 3 - D, 4 - C, 5 - B, 6 - A, 7 - AA.
+Applicable for loans originated after July 2009.
+7. **ListingCategory..numeric.** - The category of the listing that the borrower
+selected when posting their listing: 0 - Not Available, 1 - Debt Consolidation,
+2 - Home Improvement, 3 - Business, 4 - Personal Loan, 5 - Student Use, 6 - Auto,
+7- Other, 8 - Baby&Adoption, 9 - Boat, 10 - Cosmetic Procedure, 
+11 - Engagement Ring, 12 - Green Loans, 13 - Household Expenses, 
+14 - Large Purchases, 15 - Medical/Dental, 16 - Motorcycle, 17 - RV, 18 - Taxes,
+19 - Vacation, 20 - Wedding Loans 
+8. **BorrowerState** - The two letter abbreviation of the state of the address 
+of the borrower at the time the Listing was created.
+9. **EmploymentStatusDuration** - The length in months of the employment status 
+at the time the listing was created.
+10. **IsBorrowerHomeowner** - A Borrower will be classified as a homowner if 
+they have a mortgage on their credit profile or provide documentation confirming
+they are a homeowner.
+11. **CreditScoreRangeLower** - The lower value representing the range of the 
+borrower's credit score as provided by a consumer credit rating agency.
+12. **CreditScoreRangeUpper** - The upper value representing the range of the 
+borrower's credit score as provided by a consumer credit rating agency. 
+13. **DebtToIncomeRatio** - The debt to income ratio of the borrower at the time
+the credit profile was pulled. This value is Null if the debt to income ratio is
+not available. This value is capped at 10.01 (any debt to income ratio larger 
+than 1000% will be returned as 1001%).
+14. **IncomeRange** - The income range of the borrower at the time the listing 
+was created.
+15. **StatedMonthlyIncome** - The monthly income the borrower stated at the time
+the listing was created.
+16. **LoanOriginalAmount** - The origination amount of the loan.
+17. **LoanOriginationDate** - The date the loan was originated.
+18. **LoanOriginationQuarter** - The quarter in which the loan was originated.
+19. **MonthlyLoanPayment** - The scheduled monthly loan payment.
+20. **Investors** - The number of investors that funded the loan.
+
+Three new variables have been created
+
+21. **LoanOriginationYear** - Year in which the loan was originated. This is 
+created from the Loan Origination date.
+22. **LoanOriginationMonth** - The month in which the loan was originated. This 
+is created from the Loan Origination date.
+23. **NewDebtToIncomeRatio** - This is the new Debt to Income Ratio after the 
+current monthly loan payment is factored in. This is calculated by multiplying 
+the current Debt to Income Ration with the monthly income and finding the annual
+income. The loan original amount is added to this annual income. This is divided
+by annual income to find the new debt to income ratio.
+
+```{r echo=FALSE, summary_data}
+#Create the year and month columns based on the loan origination date for analysis
+loan_data$LoanOriginationYear <- year(loan_data$LoanOriginationDate)
+loan_data$LoanOriginationMonth <- month(loan_data$LoanOriginationDate)
+
+loan_data$NewDebtToIncomeRatio <- ifelse(
+  !is.na(loan_data$DebtToIncomeRatio),                                         
+  ifelse(loan_data$StatedMonthlyIncome>0,
+           ((((loan_data$DebtToIncomeRatio*loan_data$StatedMonthlyIncome)*12)+
+               loan_data$LoanOriginalAmount)/(loan_data$StatedMonthlyIncome*12)),                                                 
+           loan_data$DebtToIncomeRatio
+           ),
+         NA
+         )
+#Limit the maximum to 10.01 as given in the variable file.
+loan_data$NewDebtToIncomeRatio <- ifelse(!is.na(loan_data$NewDebtToIncomeRatio),
+                                           ifelse(
+                                             loan_data$NewDebtToIncomeRatio<=10.01,
+                                                  loan_data$NewDebtToIncomeRatio,
+                                                  10.01
+                                             ),
+                                           NA
+                                           )
+
+summary(loan_data)
+
+```
+
+
+# Univariate Plots Section
+```{r echo=FALSE, warning=FALSE}
+
+#Plot the distribution of the original loan amount
+ ggplot(subset(loan_data,!is.na(LoanOriginalAmount)),
+        aes(x=as.numeric(LoanOriginalAmount))) + 
+  geom_histogram(color="black",fill="green",binwidth=1000,origin=0.5) + 
+  xlab("Loan Amount") + ylab("Count") +
+  scale_x_continuous(limits=c(0,40000),breaks=seq(0,40000,5000)) +
+  ggtitle("Distribution of the loan amount")
+```
+```{r echo=TRUE}
+summary(loan_data$LoanOriginalAmount)
+table(loan_data$LoanOriginalAmount < 4000)
+table(loan_data$LoanOriginalAmount < 5000)
+```
+
+We can see that the the peaks in the loan amounts are at values which are 
+multiples of $5000 i.e. $5000, $10,000, $25,000 and even $35,0000. The maximum 
+number of loans are in the range of $3000 to $5000. ~40% of loans are below $5000.
+```{r echo=FALSE, warning=FALSE}
+#Plot the distribution of the monthly loan payment
+ggplot(subset(loan_data,!is.na(MonthlyLoanPayment)),aes(x=MonthlyLoanPayment)) + 
+  geom_histogram(binwidth=50,color="black",fill="green",origin=0.5) + 
+  xlab("Monthly Loan Payment ($)") + 
+  scale_x_continuous(limits=c(0,2400),breaks=seq(0,2400,200)) +
+  ggtitle("Distribution of the monthly loan payment")
+```
+
+```{r echo=TRUE}
+summary(loan_data$MonthlyLoanPayment)
+table(loan_data$MonthlyLoanPayment>1000)
+```
+
+The distribution of the monthly loan payments is positively skewed at the first 
+glance. There are some outlier values which are causing the graph to look like 
+this. As can be seen there are only 444 loans (~0.4%) whose monthly payment is 
+greater than $1000.
+
+```{r echo=FALSE, warning=FALSE}
+ggplot(subset(loan_data,!is.na(MonthlyLoanPayment)),
+       aes(x=log(MonthlyLoanPayment))) + 
+  geom_histogram(color="black",fill="green",origin=0.5) + 
+  ggtitle("Distribution of the monthly loan payment (log10)")
+```
+
+The monthly payment scale is transformed by log scale and displayed above. This 
+shows a more normal distribution. From this we can see that the maximum count is
+at log scale of 6 - which is $403. This is a different inference than what we see
+in regular scale. 
+
+```{r echo=FALSE, warning=FALSE}
+p1 = ggplot(subset(loan_data,!is.na(CreditScoreRangeLower)),
+            aes(x=CreditScoreRangeLower)) + 
+  geom_histogram(color="black",fill="green",binwidth=20) + 
+  xlab("Credit Score") + 
+  scale_x_continuous(limits=c(0,900),breaks=seq(0,900,40)) + 
+  ggtitle("Distribution of the lower credit score of applicants")
+
+p2 = ggplot(subset(loan_data,!is.na(CreditScoreRangeUpper)),
+            aes(x=CreditScoreRangeUpper)) + 
+  geom_histogram(color="black",fill="green",binwidth=20) + 
+  xlab("Credit Score") + 
+  scale_x_continuous(limits=c(0,900),breaks=seq(0,900,40)) + 
+  ggtitle("Distribution of the higher credit score of applicants")
+
+grid.arrange(p1,p2)
+```
+
+The distributions of the Credit scores (lower and upper) show a strong 
+correlation. Therefore we will consider only one (CreditScoreRangeLower) in our
+analysis.  
+
+
+```{r echo=FALSE}
+ggplot(subset(loan_data,!is.na(EmploymentStatusDuration)),
+       aes(x=as.numeric(EmploymentStatusDuration))) + 
+  geom_histogram(color="black",fill="green",origin=0.5) + 
+  scale_x_continuous(limits=c(0,800),breaks=seq(0,800,40)) + 
+  xlab("Months in Employment") + 
+  ggtitle("Distribution of months of employment of the applicants")
+
+ggplot(subset(loan_data,!is.na(EmploymentStatusDuration)),
+       aes(x=log(EmploymentStatusDuration))) + 
+  geom_histogram(color="black",fill="green",origin=0.5) + 
+  scale_x_continuous(limits=c(0,7),breaks=seq(0,7,1)) + 
+  xlab("Months in Employment (log10)") + 
+  ggtitle("Distribution of months of employment of the applicants")
+```
+
+The employment status duration is measured in months. This distribution is 
+positively skewed.Therefore I am plotting this on a log scale also. The log
+transformation is showing a more normal distribution. From this log transformed
+distribution we see that exp(4.4) which is ~82 months seems the most common
+employement duration.
+
+```{r echo=FALSE}
+ggplot(loan_data,
+       aes(x=LoanOriginationYear)) + 
+  geom_histogram(color="black",fill="green",binwidth=1,origin=0.5) + 
+  xlab("Loan Origination Year") + 
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ggtitle("Distribution of loans the year originated")
+```
+
+The distribution of the loans by the year shows that it is on increasing trend.
+There is dip in 2009 and after that the growth in number of loans is good. The
+dip in number of loans in 2014 is not really a dip as there is data only from 
+the first quarter for 2014.
+
+```{r echo=FALSE}
+ggplot(loan_data,
+       aes(x=LoanOriginationMonth, fill=as.factor(LoanOriginationYear))) + 
+  geom_histogram(color="black",origin=0.5,binwidth=1) + 
+  scale_x_continuous(limits=c(0,13),breaks=seq(1,12,1),
+                     labels=c("Jan","Feb","Mar","Apr","May","Jun",
+                              "Jul","Aug","Sep","Oct","Nov","Dec")) +
+  scale_fill_discrete(name="Loan Origination Year") +
+  xlab("Loan Origination Month") + 
+  ggtitle("Distribution of loans by month") 
+```
+
+The distribution of the loans by the month they were originated in shows that 
+the peak months are January and October. This increase also primarily because of
+loans originated in the years 2013 and 2014. The number of loans may have 
+increased for holiday spending or due to aggressive marketing by Prosper loans.
+We can see that the number of loans in 2013 are increasing month by month. The
+maximum number of loans seem to have been originated in Jan 2014.
+
+# Univariate Analysis
+
+### What is the structure of your dataset?
+
+The initial dataset consisted of 81 variables. In this I have chosen 20 variables
+for analysis.These have been listed at the top.
+
+Among these 20 variables, 6 variables are categorical variables. These are 
+LoanStatus, BorrowerState, IsBorrowerHomeowner, IncomeRange, LoanOriginationQuarter
+and LoanOrigination date.
+
+The others are either number or integer variables.
+
+### What is/are the main feature(s) of interest in your dataset?
+
+The main features of interest in my dataset are the Loan status, Loan Origination
+date and monthly income. I am interested in how many are distributed over the year,
+their status and their relationship with the profile of the loan applicant. I am
+keen to investigate if the rules for loans have changed over the years.
+
+### What other features in the dataset do you think will help support your investigation into your feature(s) of interest?
+
+I have chosen all the variables to try and understand about the loans given by
+Prosper. Therefore features like credit score, income, debt to income ratio,
+employment duration is important to understand the type of applicant the loan
+is being given to. Feature such as Estimated Effective Yield, Prosper rating,
+listing category are useful in correlating with the loan status and loan 
+applicant profile.
+
+### Did you create any new variables from existing variables in the dataset?
+
+I created three variables from existing variables. These are the month and  year
+loan was originated. This was created from the LoanOriginationDate variable.
+
+I also created another variable called NewDebtToIncomeRatio.This is the updated
+Debt to Income Ratio of the loanee after the loan is disbursed
+
+### Of the features you investigated, were there any unusual distributions? Did you perform any operations on the data to tidy, adjust, or change the form of the data? If so, why did you do this?
+
+I have 2 distributions as seen above which were positively skewed. These are for
+EmploymentStatusDuration and MonthlyLoanPayment. I applied log transformation on
+this data to check for the distribution. In both the cases, the log transformation
+helped in showing a more normal distribution. These helps us to visualize the
+values with highest count which is not possible with the distribution using the
+given value.
+
+I have also changed some of the variables as factors or numeric when plotting 
+them, so that I can plot them correctly.
+
+
+# Bivariate Plots Section
+```{r echo=FALSE, message=FALSE, warning=FALSE,Bivariate_Plots}
+
+# Take only numeric variables to generate ggpairs plot. To limit time of execution
+# choose only 9 variables
+new_df <- loan_data[sapply(loan_data,is.numeric)]
+new_df$CreditScoreRangeUpper=NULL
+new_df$Year=NULL
+new_df$LoanCurrentDaysDelinquent=NULL
+new_df$Investors=NULL
+new_df$BorrowerRate=NULL
+new_df$Term=NULL
+new_df$EstimatedReturn=NULL
+new_df$LoanOriginationYear=NULL
+new_df$LoanOriginationMonth=NULL
+new_df$NewDebtToIncomeRatio=NULL
+
+set.seed(1000)
+#Select 1000 random samples to limit time of execution
+ggpairs(data=new_df[sample.int(nrow(new_df),1000),],
+        title="ggpairs plot of select columns of Prosper Loan Data",
+        columnLabels=rep('',ncol(new_df))) +
+  theme(legend.position = "none",
+        panel.grid.major = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y=element_blank(),
+        panel.border = element_rect(fill = NA))
+
+```
+
+The ggpairs plot has been created for 9 variables - EstimatedEffectiveYield, 
+ProsperRatingnumeric, ListingCategory, EmploymentStatusDuration, CreditScoreRangeLower,
+DebtToIncomeRatio, StatedMonthlyIncome, LoanOriginalAmount, MonthlyPayment. I have 
+sampled 1000 entries to take a quick look. 
+
+We can see strong correlation between
+LoanOriginalAmount and MonthlyPayment.The Credit Score has normal distribution. It
+is interesting that the EstimatedEffectiveYield and ProsperRatingnumeric have a
+negative correlation. So better the rating, the effective yield is lesser (due to 
+lower interest rate).
+
+This plot is a good way to see quick relationships.
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_2}
+#Plot income distribution for loans in various states (boxplot). 
+#Multiply the monthly income with 12 to get the yearly income
+ggplot(filter(loan_data,!is.na(LoanStatus)),
+       aes(x=LoanStatus,y=StatedMonthlyIncome*12,fill=LoanStatus)) + 
+  geom_boxplot() + theme(axis.text.x=element_blank()) + 
+  xlab("Loan Status") + ylab("Yearly Income ($)") + 
+  scale_y_continuous(limits=c(0,120000),breaks=seq(0,120000,5000)) + 
+  stat_summary(fun.y=mean, geom="point", shape=5, size=4) + 
+  ggtitle("Yearly Income distribution for loans in various status")
+```
+This plot to see if loan status depends on yearly income has been plotted. The
+monthly income has been converted to yearly income by multiplying with 12. It is
+very interesting to see that the loans in current and final payment in progress
+states have the highest median income. It can also be seen that as the status
+of the loan goes worse, the median income is coming down. As the median of current
+loans is higher than the median of completed loans, we can infer that the yearly
+income of borrowers from Prosper loans is increasing.
+
+It is interesting to see that there a number of outliers (high income) who have
+loans in chargedoff or defaulted status. This number of outliers is significantly
+higher than for loans with other status.
+
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_3}
+#Creating a new variable to capture the type of listing to show in facet plot
+loan_data$ListingCategory=loan_data$ListingCategory..numeric.
+loan_data$ListingCategory[loan_data$ListingCategory==0]="Not Available"
+loan_data$ListingCategory[loan_data$ListingCategory==1]="Debt Consolidation"
+loan_data$ListingCategory[loan_data$ListingCategory==2]="Home Improvement"
+loan_data$ListingCategory[loan_data$ListingCategory==3]="Business"
+loan_data$ListingCategory[loan_data$ListingCategory==4]="PersonalLoan"
+loan_data$ListingCategory[loan_data$ListingCategory==5]="Student Use"
+loan_data$ListingCategory[loan_data$ListingCategory==6]="Auto"
+loan_data$ListingCategory[loan_data$ListingCategory==7]="Other"
+loan_data$ListingCategory[loan_data$ListingCategory==8]="Baby & Adoption"
+loan_data$ListingCategory[loan_data$ListingCategory==9]="Boat"
+loan_data$ListingCategory[loan_data$ListingCategory==10]="Cosmetic Procedure"
+loan_data$ListingCategory[loan_data$ListingCategory==11]="Engagement Ring"
+loan_data$ListingCategory[loan_data$ListingCategory==12]="Green Loans"
+loan_data$ListingCategory[loan_data$ListingCategory==13]="Household Expenses"
+loan_data$ListingCategory[loan_data$ListingCategory==14]="Large Purchases"
+loan_data$ListingCategory[loan_data$ListingCategory==15]="Medical/Dental"
+loan_data$ListingCategory[loan_data$ListingCategory==16]="Motorcycle"
+loan_data$ListingCategory[loan_data$ListingCategory==17]="RV"
+loan_data$ListingCategory[loan_data$ListingCategory==18]="Taxes"
+loan_data$ListingCategory[loan_data$ListingCategory==19]="Vacation"
+loan_data$ListingCategory[loan_data$ListingCategory==20]="Wedding Loans"
+
+ggplot(filter(loan_data,!is.na(LoanStatus)),aes(x=LoanStatus,fill=LoanStatus)) + 
+  geom_histogram() +facet_wrap(~ ListingCategory,scales="free_y",ncol=3) + 
+  theme(axis.text.x=element_blank()) + 
+  ggtitle("Loan Status distribution for various types of loan")
+````
+
+The debt consolidation loans are the highest type of loans. They are also significantly
+current in status. The number of current personal and student use loans have come
+down significantly.There are a number of loans in "Other" category. There are a number
+of loans in "Not Available" listing category.But as they are not current, it is
+possible that they are old loans.
+
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_5}
+#Change levels of the prosper rating numeric variable to reflect letter rating 
+#is more intuitive
+loan_data$ProsperRating..numeric.=as.factor(loan_data$ProsperRating..numeric.)
+levels(loan_data$ProsperRating..numeric.)[levels(loan_data$ProsperRating..numeric.)=="0"] <- "N/A"
+levels(loan_data$ProsperRating..numeric.)[levels(loan_data$ProsperRating..numeric.)=="1"] <- "HR"
+levels(loan_data$ProsperRating..numeric.)[levels(loan_data$ProsperRating..numeric.)=="2"] <- "E"
+levels(loan_data$ProsperRating..numeric.)[levels(loan_data$ProsperRating..numeric.)=="3"] <- "D"
+levels(loan_data$ProsperRating..numeric.)[levels(loan_data$ProsperRating..numeric.)=="4"] <- "C"
+levels(loan_data$ProsperRating..numeric.)[levels(loan_data$ProsperRating..numeric.)=="5"] <- "B"
+levels(loan_data$ProsperRating..numeric.)[levels(loan_data$ProsperRating..numeric.)=="6"] <- "A"
+levels(loan_data$ProsperRating..numeric.)[levels(loan_data$ProsperRating..numeric.)=="7"] <- "AA"
+
+
+ggplot(filter(loan_data,!is.na(loan_data$ProsperRating..numeric.)),
+       aes(x=as.factor(ProsperRating..numeric.),
+           y=BorrowerRate*100,
+           fill=ProsperRating..numeric.)) + geom_boxplot() +
+  xlab("Prosper Proprietary Rating of the Listing") + 
+  ylab("Borrower Interest Rate (%)") + 
+  ggtitle("BoxPlot of Borrower Interest Rate by Prosper Rating")
+```
+
+
+This distribution shows that for a loan which is rated low risk (highest rating),
+the interest rate is significantly lower. As the rating decreases (moves towards
+High Risk) the interest rate increases significantly. However there are a 
+significant number of outliers in High Risk (HR) loans with lower interest rate
+than the median. The difference is as high as 10% from median. Similarly there 
+are outliers in AA rating who have much higher interest rate than the median for 
+that category. The least number of outliers seem to be for loans in B category.
+
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_6}
+loan_data$Year=year(loan_data$LoanOriginationDate)
+yearly_foo <- loan_data %>% group_by(Year) %>%
+  summarise(avg=mean(CreditScoreRangeLower))
+p1 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+       aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Credit Score") + 
+  ggtitle("Average Credit Score (Lower) by year") + 
+  theme(legend.position="none")
+
+yearly_foo <- loan_data %>% group_by(Year) %>%
+  summarise(avg=mean(LoanOriginalAmount))
+p2 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+       aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Loan Amount") + 
+  ggtitle("Average Loan Amount by year") + theme(legend.position="none")
+
+grid.arrange(p1,p2)
+```
+
+The average credit score by the year shows that the credit score of the 
+borrowers increased significantly in 2009. Since then the mean has been
+gradually coming down. 
+
+The average loan amount has been significantly increasing from 2010. It has
+doubled from 2010 to 2014.
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_11}
+yearly_foo <- filter(loan_data,!is.na(DebtToIncomeRatio)) %>% group_by(Year) %>%
+  summarise(avg=mean(DebtToIncomeRatio))
+p3 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+       aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Debt to Income Ratio") + 
+  ggtitle("Average Debt to Income Ratio by year") + theme(legend.position="none")
+
+yearly_foo <- filter(loan_data,!is.na(Investors)) %>% group_by(Year) %>%
+  summarise(avg=mean(Investors))
+p4 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+       aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Number of investors") + 
+  ggtitle("Average number of investors per loan by year") + theme(legend.position="none")
+
+grid.arrange(p3,p4)
+```
+
+
+The average Debt to Income Ratio is in the range between 0.2 and 0.3. It was 
+significantly higher in 2007 when it went over 0.4. 
+
+The number of investors per loan has come down in 2014 to below 50. In 2009 it
+was almost 150.
+
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_7}
+yearly_foo <- filter(loan_data,!is.na(StatedMonthlyIncome)) %>% group_by(Year) %>%
+  summarise(avg=mean(StatedMonthlyIncome))
+p5 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+       aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Monthly income") + 
+  ggtitle("Average monthly income of loanees by year") + theme(legend.position="none")
+
+yearly_foo <- filter(loan_data,!is.na(Term)) %>% group_by(Year) %>%
+  summarise(avg=mean(Term))
+p6 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+       aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Term of the loans") + 
+  ggtitle("Average term of the loans (months) by year") + theme(legend.position="none")
+
+grid.arrange(p5,p6)
+```
+
+The average monthly income of the borrowers is increasing gradually every year. The
+average term of the loan started increasing in 2011 and reached a peak in 2013. It
+is showing a downward trend in 2014. The term of the loans may decrease in 2014.
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_8}
+
+yearly_foo <- filter(loan_data,!is.na(ProsperRating..numeric.)) %>% group_by(Year) %>%
+  summarise(avg=mean(ProsperRating..numeric.))
+p7 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+       aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Prosper Numeric Rating") + 
+  ggtitle("Average Prosper Numeric Rating of loanees by year") + theme(legend.position="none")
+
+yearly_foo <- filter(loan_data,!is.na(MonthlyLoanPayment)) %>% group_by(Year) %>%
+  summarise(avg=mean(MonthlyLoanPayment))
+p8 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+       aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Monthly loan payment") + 
+  ggtitle("Average monthly loan payment by year") + theme(legend.position="none") 
+
+grid.arrange(p7,p8)
+```
+
+The rating of the loans is increasing significantly from 2011 showing that the
+loans are less risky. The average montly payment is also increasing every year.
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_9}
+
+yearly_foo <- filter(loan_data,!is.na(EmploymentStatusDuration)) %>% group_by(Year) %>%
+  summarise(avg=mean(EmploymentStatusDuration))
+p9 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+             aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Employment duration") + 
+  ggtitle("Average employment duration (months) of loanees by year") + 
+  theme(legend.position="none") 
+
+
+yearly_foo <- filter(loan_data,!is.na(EstimatedReturn)) %>% group_by(Year) %>%
+  summarise(avg=mean(EstimatedReturn))
+p10 <- ggplot(filter(yearly_foo,!is.na(Year),!is.na(avg)),
+             aes(x=Year,y=avg,color="red")) + geom_line(size=2) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Estimated return") + 
+  ggtitle("Average Estimated Return by year") + theme(legend.position="none") 
+
+grid.arrange(p9,p10)
+```
+
+The employment status duration has been increasing every year and is showing
+peak in 2013. It has decreased slightly in 2014. As the negative correlation
+with rating of loan showed, the average estimated return is decreasing 
+significantly every year. The 2014 loans are showing the lowest estimated return.
+
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_10}
+
+#Subsetting the loans into bad loans and good loans as below and plot them in a
+#plot faceted by the income range of the borrower
+
+bad_loans <- filter(loan_data,LoanStatus != "Cancelled" &  
+                   LoanStatus != "Completed"& 
+                   LoanStatus != "FinalPaymentInProgress" 
+                 & LoanStatus != "Current")
+
+ggplot(filter(bad_loans,IncomeRange!="$0",!is.na(DebtToIncomeRatio)),
+       aes(x=StatedMonthlyIncome,y=DebtToIncomeRatio, 
+           colour=LoanStatus)) + geom_point() + 
+  facet_wrap(~IncomeRange,scales="free_x",ncol=2) + 
+  ggtitle("Bad Loans Status against Monthly Income")
+
+good_loans <- filter(loan_data,LoanStatus == "Cancelled" |  
+                    LoanStatus == "Completed"| 
+                    LoanStatus == "FinalPaymentInProgress" | 
+                    LoanStatus == "Current")
+
+ggplot(filter(good_loans,IncomeRange!="$0",!is.na(DebtToIncomeRatio)),
+       aes(x=StatedMonthlyIncome,y=DebtToIncomeRatio, 
+           colour=LoanStatus)) + 
+  geom_point() + 
+  facet_wrap(~IncomeRange,scales="free_x",ncol=2) +
+  ggtitle("Good Loans Status against Monthly Income")
+```
+
+Most of the bad loans seem to be charged off. Therefore the quality of loans
+seems to be improving. It is interesting to see that in the income range of
+$1-$24,999 the Debt to Income Ratio was as high as 10.The behavior throughout
+the income range $25,000-$49,999 seems same. The bad loans are spread throughout
+the income range.
+
+Again the Debt to Income ratio is high for good loans also for $1-$24,999 income
+range. The data for good loans shows that the income ranges have to corrected 
+for many of the loans.
+
+```{r echo=FALSE, message=FALSE, Warning=FALSE,Bivariate_Plots_12}
+#Plotting the DebtIncomeRatio before loan and the Updated DebtIncomeRatio after
+#taking the loan.
+yearly_foo <- filter(loan_data,!is.na(DebtToIncomeRatio)) %>% group_by(Year) %>%
+  summarise(AverageDebtToIncomeRatio=mean(DebtToIncomeRatio))
+yearly_foo1 <- filter(loan_data,!is.na(NewDebtToIncomeRatio)) %>% group_by(Year) %>%
+  summarise(AverageNewDebtToIncomeRatio=mean(NewDebtToIncomeRatio))
+yearly_foo <- full_join(yearly_foo,yearly_foo1,by="Year")
+test_yearly_DI <- gather(yearly_foo,"DIRatio","DIR",2:3)
+ggplot(test_yearly_DI, aes(x=Year,y=DIR,color=DIRatio)) + geom_line(size=1.5) +   
+  scale_x_continuous(limits=c(2005,2015),breaks=seq(2005,2015,1)) +
+  ylab("Debt to Income Ratio") + 
+  ggtitle("Change in Debt to Income Ratio by year after loan")
+```
+
+I plotted this graph to see how the Debt to Income ratio increases after the 
+loan is taken. It increased a lot in 2007 and is again showing that is 
+increasing by almost 0.2 in 2014.
+
+# Bivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. How did the feature(s) of interest vary with other features in the dataset?
+ 
+For me the most interesting was to see how the Debt to Income ratio of the
+borrower is increasing after taking the loan. This is showing an increasing
+trend of growing more. For loans in 2014 it has increased more. To me this is
+will be interesting to see if this will cause loans to go bad because of 
+repayment requirements.
+
+The plots of average per year showed interesting trend which made me realize
+that the quality of loans in Prosper in improving. The average rating of the loan
+is increasing while effective yield is reducing.
+
+The average income of the borrower is increasing at a much lower pace than the
+average monthly payment. This again reinforces that the debt to income ratio
+is increasing. The average loan amount is also increasing.
+ 
+ 
+### Did you observe any interesting relationships between the other features (not the main feature(s) of interest)?
+
+I noticed that most of the bad loans are charged off loans. This means that
+while dataset has a number of bad loans, it is possible that the current 
+portfolio of loans is quite strong with less number of bad loans. The income
+range variable needs cleaning up as it seems to have wrong monthly income. Some
+of the entries have "Not displayed" and "Not employed". But these are also
+completed loans and therefore are not for current loans.
+
+I have not done any analysis on the Investors. But it is an interesting 
+observation that the average number of investors is coming down significantly. This
+means that there is more confidence in Prosper Loans and investors are willing
+to lend larger sum of money (as average loan amount is also increasing).
+
+
+### What was the strongest relationship you found?
+
+I found that the Debt to Income Ratio is increasing after the loan, the
+average return per loan is reducing every year while the average rating of the
+loan is increasing every year. The interest rate for the borrower is also 
+reducing based on the rating of the loan.
+
+
+
+# Multivariate Plots Section
+
+```{r echo=FALSE,  message=FALSE, Warning=FALSE, Multivariate_Plots}
+#Move all past due loans to one level for easy visualization
+loan_data$AbbrLoanStatus <- loan_data$LoanStatus
+levels(loan_data$AbbrLoanStatus) <- c(levels(loan_data$LoanStatus),"Past Due")
+loan_data$AbbrLoanStatus[loan_data$AbbrLoanStatus %in% 
+                           c("Past Due (>120 days)",
+                            "Past Due (1-15 days)",
+                            "Past Due (16-30 days)",
+                            "Past Due (31-60 days)",
+                            "Past Due (61-90 days)",
+                            "Past Due (91-120 days)")] = "Past Due"
+#Draw the mean and median values also for y (LoanOriginalAmount)
+ggplot(loan_data,aes(x=(Term/12),y=LoanOriginalAmount,color=AbbrLoanStatus)) + 
+  geom_jitter(alpha=0.5,width=0.1) +   xlab("Loan Term in Years") + 
+  ylab("Loan Origination Amount") + scale_color_brewer(type="qual") +
+  geom_hline(aes(yintercept=mean(LoanOriginalAmount))) + 
+  annotate("text", x = c(2), y = 10000, label = c("mean"), colour = "red", size = 8) +
+  geom_hline(aes(yintercept=median(LoanOriginalAmount)),linetype=2) + 
+  annotate("text", x = c(2), y = 5000, label = c("median"), colour = "red", size = 8)
+
+
+ggplot(filter(loan_data,IncomeRange!="$0",!is.na(DebtToIncomeRatio)),
+       aes(x=StatedMonthlyIncome,y=DebtToIncomeRatio, colour=AbbrLoanStatus)) + 
+  geom_point() +
+  facet_wrap(~IncomeRange,scales="free") 
+
+```
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the investigation. Were there features that strengthened each other in terms of looking at your feature(s) of interest?
+
+I plotted the loan origination amount against the loan term (in years). These
+points were colored by the loan status. This visualization showed that most
+of the loans which are past due are in the shorter term loans. Most of the 
+current loans are the longer term loans. The visualization was strengthened 
+by the loan status color because it will make me investigate these shorter 
+term loans. Further the fact that many of the current loans are longer term,
+means that they may be recent loans and that there is scope they could go bad.
+Therefore this visualization was interesting.
+
+I also plotted the Debt to Income ratio against the monthly income and colored
+by loan status to see if we can predict the loan status. It was interesting that
+the loans in $1-$24,999 were positively skewed. It looks apparent that the
+defaulted loans had either high debt to income ratio or low income. 
+
+### Were there any interesting or surprising interactions between features?
+
+For shorter term loans the past due loans are below mean. There seem more
+defaulted loans in loans with the term 36 months. The higher value loan amounts
+have terms of 36 or 48 months.
+
+The mean and median of the loan origination amount is based on all historical
+data which may not be relevant. The current loans have significantly higher
+loan amounts, and the mean of them is probably much higher.
+
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the strengths and limitations of your model.
+No I did not.
+------
+
+# Final Plots and Summary
+
+### Plot One
+```{r echo=FALSE,message=FALSE, Warning=FALSE, Plot_One}
+#Surprising find about the data. High loan is not marked properly for incomerange
+levels(loan_data$IncomeRange) = c("Not employed", "Not displayed", "$0",
+                                  "$1-24,999", "$25,000-49,999", "$50,000-74,999",
+                                  "$75,000-99,999", "$100,000+")
+#Change the x=labels (Origination Quarter) to a series from 1 which maps to the
+#first quarter (Q4 2005). Q1 2009 is missing.
+levels(loan_data$LoanOriginationQuarter) = c(
+  "Q4 2005",
+  "Q1 2006","Q2 2006", "Q3 2006","Q4 2006",
+  "Q1 2007","Q2 2007", "Q3 2007","Q4 2007",
+  "Q1 2008","Q2 2008", "Q3 2008","Q4 2008",
+  "Q2 2009", "Q3 2009","Q4 2009",
+  "Q1 2010","Q2 2010", "Q3 2010","Q4 2010",
+  "Q1 2011","Q2 2011", "Q3 2011","Q4 2011",
+  "Q1 2012","Q2 2012", "Q3 2012","Q4 2012",
+  "Q1 2013","Q2 2013", "Q3 2013","Q4 2013",
+  "Q1 2014"
+  )
+#Put numbers for labels in x so that we can see clearly. 1 corresponds to
+#Q4 2005 and so on.
+ggplot(loan_data,
+       aes(x=LoanOriginationQuarter,y=LoanOriginalAmount,color=IncomeRange)) + 
+  geom_jitter(alpha=0.5) + scale_color_brewer(palette="Dark2") +
+  scale_x_discrete(labels=c("1","2","3","4","5","6","7","8","9","10","11","12",
+                            "13","14","15","16","17","18", "19", "20", "21",
+                            "22","23","24","25","26","27","28","29","30","31",
+                            "32","33"))
+
+```
+
+### Description One
+In this plot I have plotted the loan amount to the quarter it was originated. The
+plot is colored by the income range of the borrower. I thought of this plot to 
+see if Prosper has changed at all over the years about looking into income
+range while giving a loan and determining the amount.
+
+It is interesting that we are seeing in some Q4s a significant number of high
+number loans for high income group individuals. It is possible that the borrowing
+has been down for holiday spending. During similar time we also see spikes in 
+low number loans but at $50K+ income range. This also suggests borrowing for
+holidays but a smaller amount for these income ranges. In Q2-Q3 of every year
+there seems to be drop in loans above $10K. This is also an interesting view
+which we see in this visualization. Loans above $25000 are being dispersed only 
+to those with income above $100K+.
+
+### Plot Two
+```{r echo=FALSE,message=FALSE, Warning=FALSE, Plot_Two}
+#Plot distribution of loans by state on United States Map
+states_map <- map_data("state")
+
+state_name_list <- sapply(loan_data$BorrowerState,function(x) 
+  if(length(state.name[grep(x,state.abb)]) == 50) "District of Colombia" 
+  else state.name[grep(x,state.abb)])
+loan_data$BorrowerState=tolower(state_name_list)
+
+state.counts=data.frame(table(loan_data$BorrowerState))
+colnames(state.counts) <- c("region","Num.Loans")
+
+loans_map <-merge(state.counts, states_map, by=c("region"))
+loans_map <- loans_map[order(loans_map$order),]
+
+
+ggplot(loans_map, aes(x=long, y=lat, group=group, fill=Num.Loans)) + 
+  geom_polygon() + scale_fill_gradient(low = "green", high = "blue") + 
+  coord_equal(ratio=1.75)  +
+  theme(axis.title.x=element_blank(),axis.title.y=element_blank(), 
+        axis.ticks = element_blank(), axis.text.x = element_blank(), 
+        axis.text.y = element_blank()) +
+  ggtitle("Distribution of Prosper Loans by State")
+```
+
+### Description Two
+In this plot I have tried to map the loans by state on the United States map. 
+This will give an indication where the Prosper Loans are popular. It can be 
+seen from the map that the states with maximum number of loans are California
+followed by Texas, Florida, Illinois and New York. This is a good way to
+visualize the distribution of loans and can direct marketing efforts of
+Prosper loans. It is more powerful than showing the bar graphs.
+
+### Plot Three
+```{r echo=FALSE,message=FALSE, Warning=FALSE, Plot_Three}
+#Multiple effective yield to map %.
+ggplot(loan_data,
+       aes(x=LoanOriginalAmount,
+           y=EstimatedEffectiveYield*100, 
+           color=as.factor(LoanOriginationYear))) + 
+  geom_jitter(alpha=0.5) + 
+  xlab("Loan Amount($)") + ylab("Estimated Effective Yield (%)") +
+  ggtitle("Estimated yield for loans color coded by year of origination") 
+
+ggplot(filter(loan_data,is.na(EstimatedEffectiveYield)),
+       aes(x=LoanOriginationYear)) + 
+  geom_histogram(color="black",fill="green",binwidth=1) +
+  xlab("Year of origination of loan") + ylab("Number") +
+  ggtitle("Distribution of loans without estimated effective yield")
+
+```
+
+### Description Three
+
+This plot which shows the estimated effective yield by the loan amount, and colored
+by the year in which the loan originated. I hoped to see whether the yield was
+increasing over the years and how it depended on the loan amount. It shows that
+the loan amounts increased in 2014 (more than ~25000). The yields were negative
+in the years 2009-2010. The highest effective yield is interesting in 2008. This
+visual gives interesting perspectives which can be used to dive deeper into the
+data. The range of yields for loans for 2013-2014 seem to be in 15-25%. The yield
+is at the lower range for higher loans.
+
+There were a number of loans without estimated effective yield. So I drew a graph
+of them and saw that these are loans that belong in the time 2006-2009. All the new
+loans have this data.
+
+# Reflection
+
+This was an interesting exercise. At the end of it, I felt have barely scratched
+the surface after spending so much time in analysis. There are so many variables
+I have not even looked at. I have also not drawn any model to check. The concept
+of project is good, as it made me try and correct all graphs by the rubric. 
+
+The analysis made me understand how the loans are given and the factors that
+affect the interest rate, loan amount. I have not analysed any variables about
+the past credit history. These are the areas to look into and try and see if
+we can predict the loan status. This is the area I would concentrate next on.
+
+I have also realized that we have to condense factors to less than 8 levels
+to be able to properly visualize. I have done this for loan status where I have
+put together all past due loans as one. 
+
+Further there are a large number of current loans. I think all the variables 
+have to be recalculated for these, as past data may be skewing the results
+(as seen for average loan origination amount).
